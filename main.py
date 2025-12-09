@@ -21,7 +21,7 @@ quotes = soup.find_all("div", class_="quote")
 # ======= 7. Créer une liste pour stocker les données
 data = []
 
-# 4. Extraire les informations pour chaque citation
+# ======= 4. Extraire les informations pour chaque citation
 for q in quotes:
     text = q.find("span", class_="text").get_text(strip=True)
     author = q.find("small", class_="author").get_text(strip=True)
