@@ -1,4 +1,4 @@
 URL,Statut HTTP,Taille (octets),Temps de réponse (s)
-http://quotes.toscrape.com/page/1,200,11064,0.29279160499572754
-http://quotes.toscrape.com/page/2,200,13745,0.388535737991333
-http://quotes.toscrape.com/page/3,200,10029,0.29215502738952637
+http://quotes.toscrape.com/page/1,200,11064,0.2942013740539551
+http://quotes.toscrape.com/page/2,200,13745,0.3898603916168213
+http://quotes.toscrape.com/page/3,200,10029,0.29323911666870117

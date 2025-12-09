@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from requests import Timeout
 import time
+import logging
 
 headers = {
     'User-Agent': 'My Scraper 1.0',
@@ -107,18 +108,34 @@ def generate_report(base_url: str, num_pages_to_scrap: int, output_filename: str
 
         except Exception as e:
             data.append([page_url, "Erreur", 0, 0])
+            logging.error(f"Le rapport ne peux pas être généré dans {output_filename}: {e}")
 
     df = pd.DataFrame(data, columns=["URL", "Statut HTTP", "Taille (octets)", "Temps de réponse (s)"])
 
     df.to_csv(output_filename, encoding="utf-8", index=False)
 
     print(f"Rapport généré avec succès : {output_filename}")
+    logging.info(f"Rapport généré avec succès : {output_filename}")
 
 
 def main():
     BASE_URL = "http://quotes.toscrape.com"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('scraper.log', encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+
+
+
+
     # === 1. Créer une fonction fetch_page(url) avec gestion d'erreurs
     print(fetch_page(BASE_URL))
+    logging.info(f"page afficher avec succès pour l'url :BASE_URL")
 
     # === 2. Scraper les 3 premières pages du site
     # &
@@ -149,7 +166,8 @@ def main():
 
     generate_report(BASE_URL,3, "./save_files/report.csv")
 
-
+    # === 7. Bonus
+    # Done
 
 if __name__ == "__main__":
     main()
