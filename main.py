@@ -1,127 +1,111 @@
-import os
+import random
+import time
+from wsgiref import headers
 
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+def fetch_page(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.text
 
 
-def word_to_nbr(word) -> float | None:
-    match word.lower():
-        case "zero":
-            return 0
-        case "one":
-            return 1
-        case "two":
-            return 2
-        case "three":
-            return 3
-        case "four":
-            return 4
-        case "five":
-            return 5
-        case _:
-            print(f"\nError: no equivalent number to {word}")
-            return None
+def get_nbr_of_pages(url: str) -> int:
+    nbr_page = 1
 
-def download_image(image_url, save_path):
-    response = requests.get(image_url)
-    # Création du dossier si nécessaire
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    with open(save_path, "wb") as f:
-        f.write(response.content)
+    while True:
+        end_point = f"/page/{nbr_page}"
 
+        soup = BeautifulSoup(fetch_page(url + end_point), "lxml")
+        time_to_sleep = random.uniform(1, 3)
+        # time.sleep(time_to_sleep)
+        # print("time.sleep = ", time_to_sleep)
+        li_next_page = soup.find("li", class_="next")
+        # print(li_next_page)
+
+        if li_next_page is None:
+            break
+
+        nbr_page += 1
+
+    return nbr_page
+
+def scrape_pages(url: str, path_page: str, nbr_page: int) -> list:
+    scraped_pages = []
+
+    for i in range(1, nbr_page + 1):
+        url_full = url + path_page + str(i)
+        scraped_pages.append(BeautifulSoup(fetch_page(url_full), "lxml"))
+
+    return scraped_pages
 
 def main():
-    base_url = "http://books.toscrape.com"
+    base_url = "http://quotes.toscrape.com"
+    home_page = fetch_page(base_url)
+    # print(f"=========== home_page =========== \n{home_page}")
 
-    # ======= 1. Récupérer la page d'accueil
-    print("# ======= 1. Récupérer la page d'accueil")
-    response = requests.get(base_url)
-    # print(response.text)
+    # ===== 1.Détecte automatiquement le nombre de pages
+    nbr_of_pages = get_nbr_of_pages(base_url)
+    print(nbr_of_pages)
+    #&
+    # ===== 2. Scrape toutes les pages (jusqu'à 10 max)
+    pages_scraped = scrape_pages(base_url, "/page/", nbr_of_pages) # list
+    # print(pages_scraped)
 
-    # ======= 2. Pour chaque livre sur la page, extraire :
-    # Titre
-    # Prix (convertir en float)
-    # Note (étoiles → nombre)
-    # Disponibilité (In stock / Out of stock)
-    # URL de l'image
-    print("\n# ======= 2. Pour chaque livre sur la page, extraire")
+    # ===== 3. Pour chaque citation, extrait :
+    texts = []
+    authors = []
+    tags_global = []
+    tags_page = []
 
-    titles = []
-    prices = []
-    ratings = []
-    availabilities = []
-    img_urls = []
+    # Texte
+    # Auteur
+    # Tags
+    # URL de l'auteur
+    for page in pages_scraped:
 
-    soup = BeautifulSoup(response.text, "lxml")
-    articles = soup.find_all("article", class_="product_pod")
-    # print(articles)
-    for article in articles:
-        # title
-        h3 = article.find("h3")
-        titles.append(h3.find("a").get("title"))
-        # price
-        div_price = article.find("div", class_="product_price")
-        prices.append(float(div_price.find("p").text.strip('Â £')))
-        # ratings (étoiles → nombre)
-        p_rating = article.find("p", class_="star-rating")
-        class_rating = p_rating.get("class")[1]
-        ratings.append(word_to_nbr(class_rating))
-        # availability (In stock / Out of stock)
-        p_availability = div_price.find("p", class_="availability")
-        availabilities.append(p_availability.text.strip())
-        # URL of the image
-        div_img = article.find("div", class_="image_container")
-        img_urls.append(div_img.find("img").get("src").strip())
+        # Texte
+        span_citation = page.find("span", class_="text")
+        texts.append(span_citation.text)
+        # Auteur
+        small_author = page.find("small", class_="author")
+        authors.append(small_author.text)
+        # Tags
+        # a_tags = page.findAll("a", class_="tag")
+        # for a_tag in a_tags:
+        #     tags.append(a_tag.text)
+        # tags_global.append(tags)
+        div_quotes = page.findAll("div", class_="quote")
+        tags_quote = []
+        for quote in div_quotes:
+            tags_quote = []
 
-    # ======= 3. Créer un DataFrame Pandas
-    print("\n# ======= 3. Créer un DataFrame Pandas")
-    data = {
-        "title": titles,
-        "price": prices,
-        "rating": ratings,
-        "availability": availabilities,
-        "img_url": img_urls
-    }
-    df = pd.DataFrame(data)
-    print(df)
+            a_tags = quote.findAll("a", class_="tag")
+            for a_tag in a_tags:
+                tags_quote.append(a_tag.text)
 
-    # ======= 4. Calculer :
-    print("\n# ======= 4. Calculer :")
-    # Prix moyen
-    average_price = df["price"].mean()
-    print("average_price = ", average_price)
-    # Livre le plus cher
-    high_price = df["price"].max()
-    print("high_price = ", high_price)
-    # Livre le moins cher
-    less_price = df["price"].min()
-    print("less_price = ", less_price)
-    # Répartition par note
-    titles_by_rating = df.groupby("rating")["title"].apply(list)
-    print(titles_by_rating)
+            tags_quote = tags_quote.append(tags_quote)
+            # print(tags_quote)
+            # break
+        # break
+        tags_page.append(tags_quote)
 
-    # ======= 5. Sauvegarder dans books.csv
-    df.to_csv("./data/output/books.csv", index=False)
+    print(tags_page)
 
-    # ======= 6. Bonus : Télécharger l'image du livre le plus cher
-    # get url of the most expensive book
-    # url_expensive_book = df
-    most_expensive = df[df["price"] == high_price]
-    print(most_expensive)
-    url_expensive_book = base_url + "/" + most_expensive["img_url"].iloc[0]
-    # print("url_expensive_book = ", url_expensive_book)
 
-    if url_expensive_book:
-        save_path = "./data/output/image_expensive_book.jpg"
-        print("[INFO] Téléchargement de la première image :")
-        print(" URL :", url_expensive_book)
-        print(" Chemin local :", save_path)
-        download_image(url_expensive_book, save_path)
-        print("[OK] Téléchargement terminé.")
-    else:
-        print("[3] Aucune image à télécharger.")
+
+
+
+
+
+
+
 
 
 
