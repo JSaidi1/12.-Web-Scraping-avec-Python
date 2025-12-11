@@ -8,6 +8,22 @@
 from itemadapter import ItemAdapter
 
 
-class BookstorePipeline:
+
+import re
+
+class CleanPricePipeline:
     def process_item(self, item, spider):
+        item['price'] = float(re.sub(r'[£]', '', item['price']))
         return item
+
+class DuplicatesPipeline:
+    def __init__(self):
+        self.ids_seen = set()
+
+    def process_item(self, item, spider):
+        if item['title'] in self.ids_seen:
+            raise scrapy.exceptions.DropItem(f"Duplicate item found: {item['title']}")
+        else:
+            self.ids_seen.add(item['title'])
+            return item
+

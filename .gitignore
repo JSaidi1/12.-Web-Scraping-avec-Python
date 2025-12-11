@@ -26,11 +26,11 @@ config/secrets.yaml
 *.swo
 
 # Donnees sensibles
-data/raw/*.csv
-data/processed/*.csv
-data/output/*.xlsx
-data/output/*.csv
-logs/*.log
+#data/raw/*.csv
+#data/processed/*.csv
+#data/output/*.xlsx
+#data/output/*.csv
+#logs/*.log
 
 # OS
 .DS_Store

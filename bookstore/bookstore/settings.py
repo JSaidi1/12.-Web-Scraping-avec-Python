@@ -86,5 +86,26 @@ DOWNLOAD_DELAY = 1
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
 
-# Ordre des colonnes pour l'export CSV
-FEED_EXPORT_FIELDS = ["title", "price", "rating", "availability"]
+# Rate limiting
+DOWNLOAD_DELAY = 1
+CONCURRENT_REQUESTS_PER_DOMAIN = 2
+
+# User-Agent
+USER_AGENT = 'ecommerce_scraper (+http://yourdomain.com)'
+
+# Pipelines
+ITEM_PIPELINES = {
+    'ecommerce_scraper.pipelines.CleanPricePipeline': 300,
+    'ecommerce_scraper.pipelines.DuplicatesPipeline': 400,
+    'ecommerce_scraper.pipelines.SQLitePipeline': 500,
+}
+
+# Export JSON
+FEEDS = {
+    "books.json": {"format": "json"},
+    "books.xlsx": {
+        "format": "xlsx",
+        "overwrite": True,
+        "store_empty": False
+    },
+}

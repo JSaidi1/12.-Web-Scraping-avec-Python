@@ -3,6 +3,7 @@ import scrapy
 from bookstore.items import BookstoreItem
 
 
+
 class BooksPaginationSpider(scrapy.Spider):
     name = "books_pagination_spider"
     allowed_domains = ["books.toscrape.com"]
